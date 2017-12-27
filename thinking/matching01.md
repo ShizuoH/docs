@@ -45,62 +45,61 @@
   * 少し気持ち悪いが▲ワークがあったときに、片面しか見えない状態でマッチングしなければいけないケースが多々あるので、両方見えているときに両方マッチするというのは諦める？
   * (-51 ~ +51), (-51 ~ +30), (-30 ~ +51)で３つの見えをカバーすれば良いだろう
 * 45度までは確実に見える方針で行く?多分普通これは保証できる
-  * まあ、パラメータであっても良いのか
-  * 見えでマッチングするという意味では、距離画像でやったほうが良いのは変わらないなー
+  * パラメータであるべきかもしれない
+  * 見えでマッチングするという意味では、距離画像でやったほうが良いのは変わらない
+* 変にCOREとSUBにわけるのは良くないだろう
+	* 傾きに応じて、$a = 1$
 
 ## 暫定方針
 
 * とりあえずお試しでは、(-51 ~ +51)まで全てCOREだと思って処理する
-  * この51はパラーメータにしておく
-
+  * この51の値は、パラーメータにしておく
+  * 閾値の設定で救えるかなと期待している
 
 # 処理に必要な変数
 
-* root_core_zbin
-* leaf_core_zbin
-* root_sub_zbin
-* leaf_sub_zbin
+* root_zbin
+* leaf_zbin
 * ROOT_INFO
-  * num_core
-  * feature_arry
-  * thre
-  * num_leaf
-  * leaf_arry
+  * UBYTE num_feature
+  * IVEC3 feature_arry
+  * UBYTE thre
+  * LONG num_leaf
+  * LEAF_INFO leaf_arry
 * LEAF_INFO
-  * offset
-  * sum_feature
-  * feature_arry
-  * sum_thre
+  * IVEC2 offset
+  * LONG sum_feature
+  * IVEC3 feature_arry
+  * UBYTE sum_thre
 * ROOT_RESULT
+  * root_num
 * LEAF_RESULT
 
 # 検出時の処理の流れ
 
-* ROOT_INFOの決定
-  * ix, iyのスライディングウィンドウに対して
+* for root
+  * for ix, iy
 	* for ii in num_feature
 	  * feature_arry[ii].xとfeature_arry[ii].yを使って、密ボクセルにアクセス
-	  * root_zbinに投票
+	  * feature_arry[ii].zを使用して、root_zbinに投票
 	* max(root_zbin)がしきい値を超えていたら
 	* for jj in num_leaf
 	  * leaf_zbinにコピー
 	  * for ii in num_feature
 		* leaf_zbinに投票
 
-# モデル教示時の処理の流れ
+# 候補の共通化
 
-* COREが3点以上の候補を集めて
-  * まずは、特徴点の各候補における分布で分類
-	  * まずは、主成分分析で分類
-	  * 分類の中で
-		* もっとも特徴点の多い候補を取得
+* まずは、各候補における特徴点の分布で分類
+  * 主成分分析でクラス分け
+	  * クラスの中で
+		* a. もっとも特徴点の多い候補を取得
 		  * この原点がROOTの原点になる
 		  * 各候補で、もっともマッチするoffsetを取得
 	    * bit演算&グリードで適当にleafを計算
+		* 10マッチ共通化できなかったら終了
+		* aに戻る
+	  * 残った候補を、階層化しない方法で
 
-* SUBが3点以上の候補を集めて
-  * SUB特徴点を使って、COREのときと同じ処理を行う
 
-* 残ったのは、LEFTとして
 
-そもそも、COREとSUBで数え方が違う。。。COREはスコアが１あがるがSUBは0.5しか上がらない。
